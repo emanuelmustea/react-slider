@@ -1,16 +1,13 @@
 import React, { Component } from 'react';
 import './Carousel.css';
+import Button from './Button';
 
 export default class Carousel extends Component {
   constructor(props) {
     super(props);
-    this.currentImageIndex = 1;
-    this.transitionDuration = this.props.transitionDuration;
-    this.imagesCount = this.props.imgs.length;
-    this.state = { isSliding: false, isAnimating: false, leftPosition: 0 };
+    this.state = { isSliding: false, isAnimating: false, leftPosition: 0, currentImageIndex: 1 };
     this.changePhoto = this.changePhoto.bind(this);
   }
-  /* */
   componentDidMount() {
     this.carouselContainerWidth = this.carouselElement.offsetWidth;
     this.setState({ leftPosition: -1 * this.carouselContainerWidth });
@@ -21,17 +18,18 @@ export default class Carousel extends Component {
     return (
       <div className="carousel" ref={ref => (this.carouselElement = ref)}>
         {this.renderSliderElement(imgs)}
-        {this.renderButtons('prev', () => this.changePhoto(false))}
-        {this.renderButtons('next', () => this.changePhoto(true))}
+        <Button isSliding={this.state.isSliding} className="prev" onClick={() => this.changePhoto(false)} />
+        <Button isSliding={this.state.isSliding} className="next" onClick={() => this.changePhoto(true)} />
       </div>
     );
   }
   renderSliderElement(imgs) {
+    const { transitionDuration } = this.props;
     const sliderProps = {
       style: {
         left: this.state.leftPosition,
         transitionProperty: 'left',
-        transitionDuration: this.state.isAnimating ? `${this.transitionDuration}ms` : '0ms'
+        transitionDuration: this.state.isAnimating ? `${transitionDuration}ms` : '0ms'
       },
       className: 'slider'
     };
@@ -43,22 +41,16 @@ export default class Carousel extends Component {
       </div>
     );
   }
-  renderButtons(className, clickFunctionReference) {
-    const props = {
-      className: `${className} ${this.state.isSliding ? ' disabled' : ''}`,
-      onClick: clickFunctionReference
-    };
-    return <div {...props} />;
-  }
   cloneImages(imgs) {
     return [imgs[imgs.length - 1], ...imgs, imgs[0]];
   }
   disableSliding() {
+    const { transitionDuration } = this.props;
     setTimeout(() => {
       this.setState({
         isSliding: false
       });
-    }, this.transitionDuration);
+    }, transitionDuration);
   }
   enableSliding() {
     this.setState({
@@ -67,28 +59,33 @@ export default class Carousel extends Component {
     this.disableSliding();
   }
   moveSliderContainer(animate = true) {
+    const { transitionDuration } = this.props;
     if (animate) {
       this.setState({ isAnimating: animate });
       setTimeout(() => {
         this.setState({ isAnimating: false });
-      }, this.transitionDuration);
+      }, transitionDuration);
     }
-    this.setState({ leftPosition: -1 * this.currentImageIndex * this.carouselContainerWidth });
+    this.setState(oldState => ({ leftPosition: -1 * oldState.currentImageIndex * this.carouselContainerWidth }));
   }
   isTheLastImage(leftDirection) {
+    const imagesCount = this.props.imgs.length;
     const rightDirection = !leftDirection;
-    return (this.currentImageIndex > this.imagesCount && leftDirection) || (this.currentImageIndex < 1 && rightDirection);
+    return (this.state.currentImageIndex >= imagesCount && leftDirection) || (this.state.currentImageIndex <= 1 && rightDirection);
   }
+
   changePhoto(changeToNext = true) {
+    const imagesCount = this.props.imgs.length;
+    const { transitionDuration } = this.props;
     if (this.state.isSliding) {
       return;
     }
-    this.currentImageIndex += changeToNext ? 1 : -1;
+    this.setState(prevState => ({ currentImageIndex: changeToNext ? prevState.currentImageIndex + 1 : prevState.currentImageIndex - 1 }));
     if (this.isTheLastImage(changeToNext)) {
       setTimeout(() => {
-        this.currentImageIndex = changeToNext ? 1 : this.imagesCount;
+        this.setState({ currentImageIndex: changeToNext ? 1 : imagesCount });
         this.moveSliderContainer(false);
-      }, this.transitionDuration);
+      }, transitionDuration);
     }
     this.moveSliderContainer();
     this.enableSliding();
