@@ -1,45 +1,23 @@
 import React, { Component } from 'react';
 import './Carousel.css';
-import Button from './Button';
 
 export default class Carousel extends Component {
   constructor(props) {
     super(props);
     this.state = { isSliding: false, isAnimating: false, leftPosition: 0, currentImageIndex: 1 };
-    this.changePhoto = this.changePhoto.bind(this);
+    this.prevPhoto = this.prevPhoto.bind(this);
+    this.nextPhoto = this.nextPhoto.bind(this);
+    this.imgs = this.cloneImages(this.props.imgs);
   }
   componentDidMount() {
-    this.carouselContainerWidth = this.carouselElement.offsetWidth;
-    this.setState({ leftPosition: -1 * this.carouselContainerWidth });
-  }
-  render() {
-    const { transitionDuration } = this.props;
-    const sliderProps = {
-      style: {
-        left: this.state.leftPosition,
-        transitionProperty: 'left',
-        transitionDuration: this.state.isAnimating ? `${transitionDuration}ms` : '0ms'
-      },
-      className: 'slider'
-    };
-    const imgs = this.cloneImages(this.props.imgs);
-    return (
-      <div className="carousel" ref={ref => (this.carouselElement = ref)}>
-        <div {...sliderProps}>
-          {imgs.map((src, i) => (
-            <img src={src} key={i} />
-          ))}
-        </div>
-        <Button isSliding={this.state.isSliding} className="prev" onClick={() => this.changePhoto(false)} />
-        <Button isSliding={this.state.isSliding} className="next" onClick={() => this.changePhoto(true)} />
-      </div>
-    );
+    const carouselContainerWidth = this.carouselElement.offsetWidth;
+    const initialLeftPosition = -1 * carouselContainerWidth;
+    this.setState({ leftPosition: initialLeftPosition });
   }
   cloneImages(imgs) {
-    const imagesList = [...imgs];
-    imagesList.unshift(imgs[imgs.length - 1]);
-    imagesList.push(imgs[0]);
-    return imagesList;
+    const firstImage = imgs[0];
+    const lastImage = imgs[imgs.length - 1];
+    return [lastImage, ...imgs, firstImage];
   }
   enableButtons() {
     const { transitionDuration } = this.props;
@@ -56,7 +34,8 @@ export default class Carousel extends Component {
     this.enableButtons();
   }
   calculateSliderLeftPosition(state) {
-    return -1 * state.currentImageIndex * this.carouselContainerWidth;
+    const carouselContainerWidth = this.carouselElement.offsetWidth;
+    return -1 * state.currentImageIndex * carouselContainerWidth;
   }
   moveSliderContainer(animate = true) {
     const { transitionDuration } = this.props;
@@ -67,30 +46,55 @@ export default class Carousel extends Component {
     }
     this.setState(oldState => ({ leftPosition: this.calculateSliderLeftPosition(oldState), isAnimating: animate }));
   }
-  isTheLastImage(goingToNextPhoto) {
+  isTheLastImage(direction) {
     const imagesCount = this.props.imgs.length;
-    if (goingToNextPhoto && this.state.currentImageIndex >= imagesCount) {
+    if (direction === 'next' && this.state.currentImageIndex >= imagesCount) {
       return true;
-    } else if (!goingToNextPhoto && this.state.currentImageIndex <= 1) {
+    } else if (direction === 'prev' && this.state.currentImageIndex <= 1) {
       return true;
     }
     return false;
   }
 
-  changePhoto(changeToNext = true) {
-    const imagesCount = this.props.imgs.length;
-    const { transitionDuration } = this.props;
+  changeImageIndex(direction = 'next') {
     if (this.state.isSliding) {
       return;
     }
-    this.setState(prevState => ({ currentImageIndex: changeToNext ? prevState.currentImageIndex + 1 : prevState.currentImageIndex - 1 }));
-    if (this.isTheLastImage(changeToNext)) {
+    const imagesCount = this.props.imgs.length;
+    const currentImageIndex = direction === 'next' ? this.state.currentImageIndex + 1 : this.state.currentImageIndex - 1;
+    const { transitionDuration } = this.props;
+
+    this.setState({ currentImageIndex });
+
+    if (this.isTheLastImage(direction)) {
       setTimeout(() => {
-        this.setState({ currentImageIndex: changeToNext ? 1 : imagesCount });
+        this.setState({ currentImageIndex: direction === 'prev' ? 1 : imagesCount });
         this.moveSliderContainer(false);
       }, transitionDuration);
     }
+
     this.disableButtons();
     this.moveSliderContainer();
+  }
+  nextPhoto() {
+    this.changeImageIndex('next');
+  }
+  prevPhoto() {
+    this.changeImageIndex('prev');
+  }
+  render() {
+    const { transitionDuration } = this.props;
+    const sliderTransition = this.state.isAnimating ? `${transitionDuration}ms` : '0ms';
+    const imgsElements = this.imgs.map((src, i) => <img src={src} key={i} />);
+    const disabledClass = this.state.isSliding ? 'disabled' : '';
+    return (
+      <div className="carousel" ref={ref => (this.carouselElement = ref)}>
+        <div className="slider" style={{ left: this.state.leftPosition, transitionDuration: sliderTransition }}>
+          {imgsElements}
+        </div>
+        <button className={[`prev ${disabledClass}`]} onClick={this.prevPhoto} />
+        <button className={[`next ${disabledClass}`]} onClick={this.nextPhoto} />
+      </div>
+    );
   }
 }

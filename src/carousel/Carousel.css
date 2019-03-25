@@ -4,6 +4,7 @@
   overflow: hidden;
   position: relative;
   width: 800px;
+  max-width: 100vw;
 }
 
 .carousel > div.slider {
@@ -14,6 +15,7 @@
   top: 0;
   width: 100%;
   will-change: contents, left;
+  transition-property: left;
 }
 
 .carousel > div.slider > img {
@@ -29,6 +31,8 @@
   background: rgba(0, 0, 0, 0.3);
   bottom: 0;
   color: rgba(255, 255, 255, 0.2);
+  border: 0;
+  outline: 0;
   cursor: pointer;
   font-weight: 700;
   height: 40px;

@@ -11,6 +11,10 @@ import img7 from '../public/imgs/7.jpeg';
 
 export default class App extends Component {
   render() {
-    return <Carousel imgs={[img1, img2, img3, img4, img5, img6, img7]} transitionDuration={1000} />;
+    return (
+      <div>
+        <Carousel imgs={[img1, img2, img3, img4, img5, img6, img7]} transitionDuration={1000} />
+      </div>
+    );
   }
 }
